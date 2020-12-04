@@ -35,15 +35,40 @@ class BoggleAppTestCase(TestCase):
 
         with self.client as client:
             response = client.get('/api/new-game')
-            response_data = response.get_data(as_text=True)
-            JSON_data = json.loads(response_data)
-            
+            response_data = response.json
+
             # test that gameId is a string
-            self.assertIsInstance(JSON_data["gameId"], str)
+            self.assertIsInstance(response_data["gameId"], str)
 
             # test that board is a list of a list
-            self.assertIsInstance(JSON_data["board"], list)
-            self.assertIsInstance(JSON_data["board"][0], list)
+            self.assertIsInstance(response_data["board"], list)
+            self.assertIsInstance(response_data["board"][0], list)
 
             # test that new game is stored in the games dictionary
-            self.assertIn(JSON_data["gameId"], games.keys())
+            self.assertIn(response_data["gameId"], games.keys())
+
+    def test_api_score_word(self):
+        """ Test scoring a word """
+        with self.client as client:
+            response = client.get('/api/new-game')
+            game_id = response.json["gameId"]
+            game = games[game_id]
+            game.board = [
+                ['A', 'P', 'U', 'T', 'E'],
+                ['G', 'C', 'C', 'S', 'C'],
+                ['S', 'L', 'T', 'R', 'N'],
+                ['M', 'D', 'L', 'N', 'L'],
+                ['T', 'N', 'G', 'U', 'S']]
+
+            def _post_word_result(word):
+                """ takes in a word str and makes ajax post request, and return
+                    the result string from response"""
+                response = client.post("/api/score-word",
+                                       json={"gameId": game_id, "word": word}))
+                result = response.json["result"]
+                return result
+            # test for different words on the same board
+            self.assertEqual(_post_word_result("CUTE"), "ok")
+            self.assertEqual(_post_word_result("SLUNG"), "ok")
+            self.assertEqual(_post_word_result("DFDFD"), "not-word")
+            self.assertEqual(_post_word_result("HELLO"), "not-on-board")
