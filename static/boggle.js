@@ -17,14 +17,51 @@ async function start() {
   let board = response.data.board;
 
   displayBoard(board);
+
+  //add event listener for submit form
+  $("button").on("click", submitWord)
 }
 
 /** Display board */
 
 function displayBoard(board) {
-  // $table.empty();
+  let $tbody = $("tbody");
+  $tbody.empty();
   // loop over board and create the DOM tr/td structure
+  for(let row of board){
+    let newRow = $('<tr>')
+    for(let ltr of row){
+      let new_ltr = $('<td>').text(ltr);
+      newRow.append(new_ltr);
+    }
+    $tbody.append(newRow);
+  }
 }
 
+/** Listens to word being submitted and sends POST request
+ *  Returns: 
+ */
+
+async function submitWord(evt){
+  evt.preventDefault();
+  let word = $wordInput.val().toUpperCase();
+  let response = await axios.post("/api/score-word", {gameId, word});
+  // console.log(response.data);
+  playUpdate(response.data["result"], word);
+}
+
+/** Checks if word submitted is a legal play and update DOM with play */
+
+function playUpdate(result, word){
+  // console.log(word);
+  // console.log(result);
+  if(result === "ok"){
+    $playedWords.append($(`<li>${word}</li>`));
+  }
+  else{
+    result = result.split('-').join(' ');
+    $message.text(`${word} is ${result}`);
+  }
+}
 
 start();
